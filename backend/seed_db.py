@@ -1,40 +1,69 @@
 import sqlite3
+import random
+from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 # Creates jobs.db and jobs table
 conn = sqlite3.connect('jobs.db')
 c = conn.cursor()
 
+# Recreate table with posted_at, salary, experience_level, apply_url
+c.execute('DROP TABLE IF EXISTS jobs')
 c.execute('''
-CREATE TABLE IF NOT EXISTS jobs (
+CREATE TABLE jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT,
     company TEXT,
     location TEXT,
     job_type TEXT,
     description TEXT,
-    skills TEXT
+    skills TEXT,
+    image_url TEXT,
+    posted_at TEXT,
+    salary TEXT,
+    experience_level TEXT,
+    apply_url TEXT
 )
 ''')
 
-# Clear existing data so we always have a clean ~100‑job dataset
-c.execute('DELETE FROM jobs')
+def company_logo_url(company):
+    """Placeholder company logo: same company = same image."""
+    name = quote(company or 'Company')
+    return f"https://ui-avatars.com/api/?name={name}&size=256&background=4f46e5&color=fff&bold=1"
+
+# Varied salary and experience for realism (cycle by index)
+SALARY_OPTIONS = [
+    "₹6–10 LPA", "₹8–12 LPA", "₹10–15 LPA", "₹12–18 LPA", "As per industry standards",
+    "Not disclosed", "₹4–6 LPA", "₹15–25 LPA", "Stipend (Internship)",
+]
+EXPERIENCE_OPTIONS = ["Entry level", "0–2 years", "1–3 years", "Mid-level", "2–5 years", "Senior", "0–1 years"]
+
+def apply_url_for_company(company):
+    """Placeholder apply URL per company (demo)."""
+    slug = (company or "company").replace(" ", "").lower()
+    return f"https://{slug}.careers.example.com/apply"
+
+def random_past_date(days_back_max=21):
+    """ISO date string for a random day in the last days_back_max."""
+    d = datetime.now(timezone.utc) - timedelta(days=random.randint(0, days_back_max))
+    return d.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 # Explicit list of ~100 reasonably unique jobs
 jobs = [
     ("Junior Python Backend Developer", "TechCorp", "Bangalore", "Full-time", "Work on REST APIs for internal tools under senior guidance.", "Python, Flask, REST, Git"),
     ("Python Backend Developer", "TechCorp", "Bangalore", "Full-time", "Design and maintain scalable microservices for customer-facing products.", "Python, Flask, SQLAlchemy, Docker, Redis"),
-    ("Senior Python Backend Engineer", "TechCorp", "Remote", "Lead backend architecture and mentor junior developers.", "Python, FastAPI, PostgreSQL, Kubernetes, AWS"),
+    ("Senior Python Backend Engineer", "TechCorp", "Remote", "Full-time", "Lead backend architecture and mentor junior developers.", "Python, FastAPI, PostgreSQL, Kubernetes, AWS"),
     ("Django Backend Developer", "DevHub", "Hyderabad", "Full-time", "Build admin panels and APIs using Django and DRF.", "Python, Django, Django REST Framework, Celery"),
     ("Flask API Engineer", "DevHub", "Mumbai", "Full-time", "Develop internal APIs for analytics and reporting.", "Python, Flask, Pandas, SQL"),
     ("Backend Engineer (Node/Python)", "StartupXYZ", "Bangalore", "Full-time", "Work on event-driven backend services in a startup environment.", "Node.js, Python, Kafka, MongoDB"),
-    ("Full Stack Developer (Python + React)", "StartupXYZ", "Remote", "Own features end-to-end across backend and frontend.", "Python, FastAPI, React, TypeScript, PostgreSQL"),
+    ("Full Stack Developer (Python + React)", "StartupXYZ", "Remote", "Full-time", "Own features end-to-end across backend and frontend.", "Python, FastAPI, React, TypeScript, PostgreSQL"),
     ("SDE 1 Backend", "BigTech", "Bangalore", "Full-time", "Implement features in large-scale distributed backend systems.", "Java, Python, Spring Boot, MySQL"),
     ("SDE 2 Backend", "BigTech", "Hyderabad", "Full-time", "Design and optimize low-latency backend components.", "Java, Kotlin, Microservices, Kafka"),
     ("Backend Intern (Python)", "LearnDev", "Pune", "Internship", "Assist in building small backend utilities.", "Python, SQLite, REST, Git"),
 
     ("React Frontend Developer", "UIFirst", "Bangalore", "Full-time", "Build dashboards and component libraries in React.", "React, JavaScript, TypeScript, Redux, CSS"),
     ("Junior React Developer", "UIFirst", "Hyderabad", "Full-time", "Implement UI screens from Figma designs.", "React, JavaScript, HTML, CSS"),
-    ("Senior Frontend Engineer", "UIFirst", "Remote", "Own frontend architecture and performance.", "React, TypeScript, Next.js, Webpack"),
+    ("Senior Frontend Engineer", "UIFirst", "Remote", "Full-time", "Own frontend architecture and performance.", "React, TypeScript, Next.js, Webpack"),
     ("Frontend Intern", "WebSolutions", "Mumbai", "Internship", "Learn modern frontend stacks and assist on client projects.", "HTML, CSS, JavaScript, React"),
     ("Angular Frontend Developer", "WebSolutions", "Delhi", "Full-time", "Work on enterprise admin portals using Angular.", "Angular, TypeScript, RxJS, SCSS"),
     ("Vue.js Frontend Engineer", "DesignFlow", "Chennai", "Full-time", "Develop responsive marketing websites and SPAs.", "Vue.js, JavaScript, Tailwind CSS"),
@@ -47,11 +76,11 @@ jobs = [
     ("Junior Full Stack Developer", "StackWorks", "Hyderabad", "Full-time", "Work across APIs and UI for internal tools.", "React, Node.js, PostgreSQL"),
     ("Full Stack Engineer (Java + React)", "EnterpriseSoft", "Mumbai", "Full-time", "Develop enterprise web applications for large clients.", "Java, Spring, React, Oracle DB"),
     ("Full Stack Intern", "EnterpriseSoft", "Noida", "Internship", "Learn full stack concepts and contribute to small modules.", "JavaScript, Node.js, React, MySQL"),
-    ("Full Stack Engineer (Python / Vue)", "DataCo", "Remote", "Build data-heavy full-stack features and internal dashboards.", "Python, Flask, Vue.js, SQL"),
+    ("Full Stack Engineer (Python / Vue)", "DataCo", "Remote", "Full-time", "Build data-heavy full-stack features and internal dashboards.", "Python, Flask, Vue.js, SQL"),
     ("LAMP Stack Developer", "OldSchoolWeb", "Chennai", "Full-time", "Maintain legacy PHP applications and migrate pieces to modern stack.", "PHP, Laravel, MySQL, JavaScript"),
     ("Junior PHP Developer", "OldSchoolWeb", "Delhi", "Full-time", "Fix bugs and add small features to client sites.", "PHP, MySQL, HTML, CSS"),
     ("Full Stack Developer (Ruby on Rails)", "RailsHouse", "Bangalore", "Full-time", "Ship features quickly on Ruby on Rails applications.", "Ruby, Rails, Postgres, React"),
-    ("Backend-heavy Full Stack Engineer", "RailsHouse", "Remote", "Focus on API design with some frontend work.", "Ruby, Rails, GraphQL, React"),
+    ("Backend-heavy Full Stack Engineer", "RailsHouse", "Remote", "Full-time", "Focus on API design with some frontend work.", "Ruby, Rails, GraphQL, React"),
     ("Freelance-style Full Stack Intern", "SideProjectLab", "Pune", "Internship", "Work on multiple mini full-stack side projects.", "Next.js, Node.js, Prisma, SQLite"),
 
     ("Data Analyst", "InsightCorp", "Bangalore", "Full-time", "Analyze product metrics and create weekly reports.", "SQL, Excel, Power BI, Python"),
@@ -115,7 +144,18 @@ for idx, j in enumerate(jobs):
     if len(j) != 6:
         print(f"Skipping invalid job at index {idx} (expected 6 fields, got {len(j)}): {j}")
         continue
-    c.execute("INSERT INTO jobs (title, company, location, job_type, description, skills) VALUES (?,?,?,?,?,?)", j)
+    title, company, location, job_type, description, skills = j
+    image_url = company_logo_url(company)
+    posted_at = random_past_date()
+    salary = SALARY_OPTIONS[idx % len(SALARY_OPTIONS)]
+    experience_level = EXPERIENCE_OPTIONS[idx % len(EXPERIENCE_OPTIONS)]
+    apply_url = apply_url_for_company(company)
+    c.execute(
+        """INSERT INTO jobs (title, company, location, job_type, description, skills, image_url,
+           posted_at, salary, experience_level, apply_url) VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (title, company, location, job_type, description, skills, image_url,
+         posted_at, salary, experience_level, apply_url),
+    )
 
 conn.commit()
 conn.close()

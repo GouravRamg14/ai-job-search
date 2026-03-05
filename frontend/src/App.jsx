@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import Home from './pages/Home';
 import JobDetail from './pages/JobDetail';
 import Shortlist from './pages/Shortlist';
+import CompanyJobs from './pages/CompanyJobs';
 
 const API = 'http://localhost:5000/api';
 
@@ -60,6 +61,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/job/:id" element={<JobDetail />} />
+              <Route path="/company/:companyName" element={<CompanyJobs />} />
               <Route path="/shortlist" element={<Shortlist />} />
             </Routes>
           </main>

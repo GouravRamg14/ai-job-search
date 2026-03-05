@@ -17,22 +17,39 @@ def get_all_jobs():
     conn.close()
     return [dict(row) for row in rows]
 
-# Build one text string per job for TF-IDF (title + description + skills)
+# Build one text string per job for TF-IDF (title, description, skills, location, job_type)
+# Add remote/on-site synonyms so "remote" and "on-site" searches work
 def job_to_text(job):
-    return f"{job.get('title','')} {job.get('description','')} {job.get('skills','')}"
+    loc = (job.get('location') or '').strip()
+    parts = [
+        job.get('title', ''),
+        job.get('description', ''),
+        job.get('skills', ''),
+        job.get('job_type', ''),
+        loc,
+    ]
+    text = ' '.join(parts)
+    if loc.lower() == 'remote':
+        text += ' remote work from home'
+    else:
+        text += ' on-site onsite in-office'
+    return text
 
 # ----- API routes -----
 
-# 1) List all jobs (optional filter by job_type or location)
+# 1) List all jobs (optional filter by job_type, location, company)
 @app.route('/api/jobs', methods=['GET'])
 def list_jobs():
     jobs = get_all_jobs()
     job_type = request.args.get('job_type')
     location = request.args.get('location')
+    company = request.args.get('company')
     if job_type:
-        jobs = [j for j in jobs if j.get('job_type') == job_type]
+        jobs = [j for j in jobs if (j.get('job_type') or '').strip().lower() == job_type.lower()]
     if location:
         jobs = [j for j in jobs if location.lower() in (j.get('location') or '').lower()]
+    if company:
+        jobs = [j for j in jobs if (j.get('company') or '').strip().lower() == company.lower()]
     return jsonify(jobs)
 
 # 2) One job by id
@@ -63,24 +80,44 @@ def similar_jobs(job_id):
     top = [jobs[i] for i in order if i != idx][:4]
     return jsonify(top)
 
-# 4) Smart search (AI)
+# 4) Filter options for LinkedIn-style filters (location, job type, experience_level)
+@app.route('/api/filters', methods=['GET'])
+def filters():
+    jobs = get_all_jobs()
+    locations = sorted({(j.get('location') or '').strip() for j in jobs if (j.get('location') or '').strip()})
+    job_types = sorted({(j.get('job_type') or '').strip() for j in jobs if (j.get('job_type') or '').strip()})
+    experience_levels = sorted({(j.get('experience_level') or '').strip() for j in jobs if (j.get('experience_level') or '').strip()})
+    return jsonify({"locations": locations, "job_types": job_types, "experience_levels": experience_levels})
+
+# 5) Smart search (AI) with optional location, job_type, experience_level filters
 @app.route('/api/search', methods=['GET'])
 def search():
     q = request.args.get('q', '').strip()
-    limit = request.args.get('limit', default=10, type=int)
+    limit = request.args.get('limit', default=20, type=int)
+    location_filter = request.args.get('location', '').strip()
+    job_type_filter = request.args.get('job_type', '').strip()
+    experience_filter = request.args.get('experience_level', '').strip()
+
     jobs = get_all_jobs()
+
+    if location_filter:
+        jobs = [j for j in jobs if (j.get('location') or '').strip().lower() == location_filter.lower()]
+    if job_type_filter:
+        jobs = [j for j in jobs if (j.get('job_type') or '').strip().lower() == job_type_filter.lower()]
+    if experience_filter:
+        jobs = [j for j in jobs if (j.get('experience_level') or '').strip().lower() == experience_filter.lower()]
+
     if not q:
-        # If there is no query, return at most "limit" jobs
         return jsonify(jobs[:limit])
 
     texts = [job_to_text(j) for j in jobs]
-    # Character n‑gram TF‑IDF so queries with small typos still match
+    if not texts:
+        return jsonify([])
     vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matrix = vectorizer.fit_transform(texts)
     q_vec = vectorizer.transform([q])
     sims = cosine_similarity(q_vec, matrix)[0]
     order = sims.argsort()[::-1]
-    # Return only the top "limit" matches
     top_indices = order[:limit]
     results = [jobs[i] for i in top_indices]
     return jsonify(results)

@@ -1,28 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API } from '../App';
+import { getJobImageUrl } from '../utils/jobImage';
+import { relativeTime } from '../utils/relativeTime';
+
+const SEARCH_LIMIT = 30;
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterJobType, setFilterJobType] = useState('');
+  const [filterExperience, setFilterExperience] = useState('');
+  const [filterOptions, setFilterOptions] = useState({ locations: [], job_types: [], experience_levels: [] });
   const [loading, setLoading] = useState(true);
   const [emptyState, setEmptyState] = useState(false);
 
-  useEffect(() => {
-    fetch(API + '/jobs')
-      .then(res => res.json())
-      .then(data => {
-        setJobs(data);
-        setEmptyState(data.length === 0);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const doSearch = () => {
-    if (!search.trim()) return;
+  const fetchResults = () => {
     setLoading(true);
-    fetch(API + '/search?q=' + encodeURIComponent(search))
+    const params = new URLSearchParams();
+    if (search.trim()) params.set('q', search.trim());
+    if (filterLocation) params.set('location', filterLocation);
+    if (filterJobType) params.set('job_type', filterJobType);
+    if (filterExperience) params.set('experience_level', filterExperience);
+    params.set('limit', String(SEARCH_LIMIT));
+    fetch(API + '/search?' + params.toString())
       .then(res => res.json())
       .then(data => {
         setJobs(data);
@@ -31,6 +33,30 @@ export default function Home() {
       })
       .catch(() => setLoading(false));
   };
+
+  useEffect(() => {
+    fetch(API + '/filters')
+      .then(res => res.json())
+      .then(setFilterOptions)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchResults();
+  }, [filterLocation, filterJobType, filterExperience]);
+
+  const doSearch = () => {
+    fetchResults();
+  };
+
+  const clearFilters = () => {
+    setFilterLocation('');
+    setFilterJobType('');
+    setFilterExperience('');
+    setSearch('');
+  };
+
+  const hasActiveFilters = filterLocation || filterJobType || filterExperience || search.trim();
 
   return (
     <div className="space-y-6">
@@ -57,7 +83,7 @@ export default function Home() {
                 <input
                   type="text"
                   className="w-full border-none bg-transparent text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-0 md:text-base"
-                  placeholder='Try: "entry level python backend remote"'
+                  placeholder='Try: "remote", "on-site", "python Bangalore", "internship"'
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && doSearch()}
@@ -76,11 +102,68 @@ export default function Home() {
             </div>
           </div>
 
+          {/* LinkedIn-style filters: Location + Job type */}
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-3 py-2.5 md:px-4">
+            <span className="text-xs font-medium uppercase tracking-[0.15em] text-slate-400">
+              Filters
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-slate-300">
+                <span className="text-slate-500">Location</span>
+                <select
+                  value={filterLocation}
+                  onChange={e => setFilterLocation(e.target.value)}
+                  className="rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-slate-100 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">All locations</option>
+                  {filterOptions.locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-slate-300">
+                <span className="text-slate-500">Job type</span>
+                <select
+                  value={filterJobType}
+                  onChange={e => setFilterJobType(e.target.value)}
+                  className="rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-slate-100 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">All types</option>
+                  {filterOptions.job_types.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs text-slate-300">
+                <span className="text-slate-500">Experience</span>
+                <select
+                  value={filterExperience}
+                  onChange={e => setFilterExperience(e.target.value)}
+                  className="rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-slate-100 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  <option value="">All levels</option>
+                  {filterOptions.experience_levels?.map(e => (
+                    <option key={e} value={e}>{e}</option>
+                  ))}
+                </select>
+              </label>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-200"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          </div>
+
           <p className="flex items-center gap-3 text-xs text-slate-400">
             <span className="inline-flex h-6 items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-emerald-200">
               Typo‑tolerant AI search
             </span>
-            <span>Powered by similarity search over titles, descriptions &amp; skills.</span>
+            <span>Search by role or skills; filter by location &amp; job type above.</span>
           </p>
         </div>
 
@@ -118,9 +201,14 @@ export default function Home() {
           <div>
             <h2 className="text-sm font-semibold text-slate-50 md:text-base">
               Matching roles
+              {hasActiveFilters && (
+                <span className="ml-2 font-normal text-slate-400">
+                  {[filterLocation, filterJobType, filterExperience, search.trim()].filter(Boolean).join(' · ')}
+                </span>
+              )}
             </h2>
             <p className="text-xs text-slate-400">
-              Sorted by how well they fit what you typed.
+              {search.trim() ? 'Sorted by relevance to your search.' : 'Filter by location and job type above.'}
             </p>
           </div>
           {!loading && (
@@ -138,16 +226,14 @@ export default function Home() {
         ) : emptyState ? (
           <div className="space-y-3 rounded-xl border border-dashed border-slate-700 bg-slate-950/80 px-4 py-6 text-sm text-slate-300">
             <p className="font-medium text-slate-100">
-              No roles matched that query just yet.
+              No roles matched {hasActiveFilters ? 'these filters' : 'that query'}.
             </p>
             <p className="text-xs text-slate-400">
-              Try searching by{" "}
-              <span className="font-medium text-slate-200">skill</span> (e.g.{" "}
-              <span className="font-mono text-emerald-300">"python backend"</span>),{" "}
-              <span className="font-medium text-slate-200">location</span> (e.g.{" "}
-              <span className="font-mono text-emerald-300">"remote"</span>) or{" "}
-              <span className="font-medium text-slate-200">experience</span> (e.g.{" "}
-              <span className="font-mono text-emerald-300">"internship"</span>).
+              {hasActiveFilters ? (
+                <>Try <button type="button" onClick={clearFilters} className="font-medium text-brand-200 underline-offset-2 hover:underline">clearing filters</button> or different location/job type.</>
+              ) : (
+                <>Try searching by <span className="font-medium text-slate-200">skill</span> (e.g. <span className="font-mono text-emerald-300">"python backend"</span>), <span className="font-medium text-slate-200">location</span> (e.g. <span className="font-mono text-emerald-300">"remote"</span>) or <span className="font-medium text-slate-200">job type</span> in the filters above.</>
+              )}
             </p>
           </div>
         ) : (
@@ -157,30 +243,55 @@ export default function Home() {
                 key={j.id}
                 className="group flex flex-col justify-between rounded-2xl border border-slate-800/80 bg-slate-900/70 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-500/70 hover:bg-slate-900 hover:shadow-soft"
               >
-                <div className="space-y-1.5">
-                  <Link
-                    to={'/job/' + j.id}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-50 transition group-hover:text-brand-200 md:text-base"
-                  >
-                    {j.title}
-                    <span className="text-[0.6rem] uppercase tracking-[0.18em] text-brand-200/80">
-                      View
-                    </span>
-                  </Link>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
-                    <span className="rounded-full bg-slate-800/80 px-2.5 py-0.5">
-                      {j.company}
-                    </span>
-                    <span>·</span>
-                    <span className="text-slate-300">{j.location}</span>
-                    <span>·</span>
-                    <span className="rounded-full bg-slate-900/90 px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.16em] text-slate-300">
-                      {j.job_type}
-                    </span>
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={getJobImageUrl(j)}
+                      alt=""
+                      className="h-14 w-14 rounded-xl object-cover ring-1 ring-white/10"
+                    />
                   </div>
-                  <p className="line-clamp-2 text-xs text-slate-400">
-                    {j.description}
-                  </p>
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Link
+                      to={'/job/' + j.id}
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-slate-50 transition group-hover:text-brand-200 md:text-base"
+                    >
+                      {j.title}
+                      <span className="text-[0.6rem] uppercase tracking-[0.18em] text-brand-200/80">
+                        View
+                      </span>
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+                      <Link
+                        to={'/company/' + encodeURIComponent(j.company || '')}
+                        className="rounded-full bg-slate-800/80 px-2.5 py-0.5 hover:bg-slate-700 hover:text-slate-100"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {j.company}
+                      </Link>
+                      <span>·</span>
+                      <span className="text-slate-300">{j.location}</span>
+                      <span>·</span>
+                      <span className="rounded-full bg-slate-900/90 px-2 py-0.5 text-[0.7rem] uppercase tracking-[0.16em] text-slate-300">
+                        {j.job_type}
+                      </span>
+                      {(j.posted_at || j.salary || j.experience_level) && (
+                        <>
+                          <span>·</span>
+                          {j.posted_at && (
+                            <span className="text-slate-500">{relativeTime(j.posted_at)}</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-[0.65rem] text-slate-400">
+                      {j.salary && <span>{j.salary}</span>}
+                      {j.experience_level && <span className="rounded bg-slate-800/80 px-1.5 py-0.5">{j.experience_level}</span>}
+                    </div>
+                    <p className="line-clamp-2 text-xs text-slate-400">
+                      {j.description}
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1">
                   {String(j.skills || '')
