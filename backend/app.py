@@ -53,7 +53,8 @@ def similar_jobs(job_id):
         return jsonify({"error": "Not found"}), 404
 
     texts = [job_to_text(j) for j in jobs]
-    vectorizer = TfidfVectorizer()
+    # Character n‑gram TF‑IDF makes this more robust to small typos
+    vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matrix = vectorizer.fit_transform(texts)
     idx = next(i for i, j in enumerate(jobs) if j['id'] == job_id)
     sims = cosine_similarity(matrix[idx:idx+1], matrix)[0]
@@ -73,7 +74,8 @@ def search():
         return jsonify(jobs[:limit])
 
     texts = [job_to_text(j) for j in jobs]
-    vectorizer = TfidfVectorizer()
+    # Character n‑gram TF‑IDF so queries with small typos still match
+    vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matrix = vectorizer.fit_transform(texts)
     q_vec = vectorizer.transform([q])
     sims = cosine_similarity(q_vec, matrix)[0]
