@@ -4,7 +4,9 @@ import JobDetail from './pages/JobDetail';
 import Shortlist from './pages/Shortlist';
 import CompanyJobs from './pages/CompanyJobs';
 
-const API = 'http://localhost:5000/api';
+// In dev, use relative /api (Vite proxies to backend). Set VITE_API_URL for production if needed.
+const base = (import.meta.env.VITE_API_URL ?? '').toString().replace(/\/?$/, '');
+const API = base ? `${base}/api` : '/api';
 
 function App() {
   return (

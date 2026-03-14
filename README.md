@@ -70,10 +70,10 @@ npm run dev
 
 Open the URL shown by Vite (typically http://localhost:5173) and the app should connect to the Flask backend on port 5000.
 
-## Optional: run scripts (backend)
+## Optional: run scripts
 
-- **macOS / Linux:** from `backend/`, run `./run_backend.sh` to activate venv, install deps, seed DB if missing, and start the server.
-- **Windows:** from `backend/`, run `run_backend.bat` (double-click or `run_backend.bat` in cmd) to do the same.
+- **Backend:** macOS/Linux: `./run_backend.sh` from `backend/`. Windows: `run_backend.bat` from `backend/`.
+- **Frontend (Windows):** from `frontend/` run `run_frontend.bat` to install deps and start the dev server with `npx vite`. If `npm run dev` fails on Windows, this script or running `npx vite` from `frontend` often works; ensure Node is in PATH and use Command Prompt if PowerShell blocks scripts.
 
 ## Notes
 
