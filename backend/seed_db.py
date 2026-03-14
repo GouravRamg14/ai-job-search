@@ -1,10 +1,14 @@
 import sqlite3
 import random
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from urllib.parse import quote
 
+# Database path: same folder as this script (works on both Windows and macOS/Linux)
+DB_PATH = Path(__file__).resolve().parent / "jobs.db"
+
 # Creates jobs.db and jobs table
-conn = sqlite3.connect('jobs.db')
+conn = sqlite3.connect(str(DB_PATH))
 c = conn.cursor()
 
 # Recreate table with posted_at, salary, experience_level, apply_url

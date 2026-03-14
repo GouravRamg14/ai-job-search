@@ -1,4 +1,6 @@
 import sqlite3
+from pathlib import Path
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -7,9 +9,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__)
 CORS(app)  # allows React to call this backend
 
+# Database path: same folder as this script (works on both Windows and macOS/Linux)
+DB_PATH = Path(__file__).resolve().parent / "jobs.db"
+
 # Load all jobs from SQLite into a list (we'll use this for AI)
 def get_all_jobs():
-    conn = sqlite3.connect('jobs.db')
+    conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row  # so we get dict-like rows
     c = conn.cursor()
     c.execute("SELECT * FROM jobs")
