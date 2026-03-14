@@ -48,7 +48,7 @@ When the backend is running you can verify endpoints:
 
 ## Frontend setup
 
-You need Node.js and npm installed (LTS release).
+You need **Node.js 21 or newer** (e.g. Node 22 LTS from [nodejs.org](https://nodejs.org/)). Vite 7 requires this for `crypto.hash` support; older Node (18/20) will show crypto errors. Check with `node -v`.
 
 From the workspace root run (same on macOS, Linux, and Windows):
 

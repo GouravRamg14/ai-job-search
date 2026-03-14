@@ -1,9 +1,3 @@
-// Polyfill for Node 18/20 on Windows: crypto.hash() is not available (added in Node 21)
-import { createHash } from 'node:crypto'
-if (typeof globalThis.crypto?.hash !== 'function') {
-  globalThis.crypto = { ...globalThis.crypto, hash: (alg) => createHash(alg) }
-}
-
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
