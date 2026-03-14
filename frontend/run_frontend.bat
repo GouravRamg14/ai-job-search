@@ -25,5 +25,7 @@ if not exist "node_modules" (
 echo Starting Vite dev server at http://localhost:5173
 echo Make sure the backend is running on http://127.0.0.1:5000
 echo.
+REM Load crypto polyfill before Vite (fixes "crypto.hash is not a function" on Node 18/20)
+set NODE_OPTIONS=--require %~dp0vite-crypto-polyfill.cjs
 call npx vite
 pause
