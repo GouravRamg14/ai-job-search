@@ -1,13 +1,28 @@
+import os
 import sqlite3
 from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from auth import login as auth_login_view
+from auth import register as auth_register_view
+from auth import register_auth
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-change-FLASK_SECRET_KEY")
 CORS(app)  # allows React to call this backend
+
+register_auth(app)
+
+# Short aliases (canonical routes are /api/auth/register and /api/auth/login)
+app.add_url_rule("/api/register", "register_alias", auth_register_view, methods=["POST"])
+app.add_url_rule("/api/login", "login_alias", auth_login_view, methods=["POST"])
 
 # Database path: same folder as this script (works on both Windows and macOS/Linux)
 DB_PATH = Path(__file__).resolve().parent / "jobs.db"

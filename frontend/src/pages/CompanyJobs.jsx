@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { API } from '../App';
+import { API } from '../api';
 import { getJobImageUrl } from '../utils/jobImage';
 import { relativeTime } from '../utils/relativeTime';
 
