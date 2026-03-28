@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { API } from '../api';
+import { useAuth } from '../context/AuthContext';
+import ApplyJobModal from '../components/jobs/ApplyJobModal';
+import { loginUrlWithNext } from '../utils/authRedirect';
 import { getJobImageUrl } from '../utils/jobImage';
 import { relativeTime } from '../utils/relativeTime';
 
 export default function JobDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [job, setJob] = useState(null);
   const [similar, setSimilar] = useState([]);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [shortlistNote, setShortlistNote] = useState('');
+  const shortlistTimerRef = useRef(0);
 
   useEffect(() => {
     fetch(API + '/jobs/' + id)
@@ -21,12 +29,28 @@ export default function JobDetail() {
   }, [id]);
 
   const addToShortlist = () => {
+    if (!user) {
+      navigate(loginUrlWithNext(`/job/${id}`));
+      return;
+    }
     const list = JSON.parse(localStorage.getItem('shortlist') || '[]');
-    if (!list.find(j => j.id === job.id)) {
+    if (list.find(j => j.id === job.id)) {
+      setShortlistNote('This role is already on your shortlist.');
+    } else {
       list.push(job);
       localStorage.setItem('shortlist', JSON.stringify(list));
-      alert('Added to shortlist!');
+      setShortlistNote('Saved to your shortlist.');
     }
+    window.clearTimeout(shortlistTimerRef.current);
+    shortlistTimerRef.current = window.setTimeout(() => setShortlistNote(''), 3200);
+  };
+
+  const openApply = () => {
+    if (!user) {
+      navigate(loginUrlWithNext(`/job/${id}`));
+      return;
+    }
+    setApplyOpen(true);
   };
 
   if (!job) {
@@ -117,26 +141,36 @@ export default function JobDetail() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               type="button"
               onClick={addToShortlist}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98]"
+              disabled={authLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] disabled:opacity-50"
             >
               Add to shortlist
               <span className="text-xs text-brand-100/90">for later review</span>
             </button>
-            {(job.apply_url || job.company) && (
-              <a
-                href={job.apply_url || `mailto:careers@${(job.company || '').replace(/\s+/g, '').toLowerCase()}.example.com?subject=Application: ${encodeURIComponent(job.title || '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 hover:text-white"
-              >
-                Apply on company site
-                <span className="text-xs text-slate-400">↗</span>
-              </a>
-            )}
+            <button
+              type="button"
+              onClick={openApply}
+              disabled={authLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-700 hover:text-white disabled:opacity-50"
+            >
+              Apply for this role
+              <span className="text-xs text-slate-400">form</span>
+            </button>
+            {shortlistNote ? (
+              <p className="w-full text-xs font-medium text-emerald-400/90">{shortlistNote}</p>
+            ) : null}
+            {!user && !authLoading ? (
+              <p className="w-full text-xs text-slate-500">
+                <Link to={loginUrlWithNext(`/job/${id}`)} className="font-medium text-brand-400 hover:text-brand-300">
+                  Sign in
+                </Link>{' '}
+                to shortlist and apply.
+              </p>
+            ) : null}
           </div>
         </section>
 
@@ -183,6 +217,8 @@ export default function JobDetail() {
           )}
         </aside>
       </div>
+
+      <ApplyJobModal job={job} open={applyOpen} onClose={() => setApplyOpen(false)} />
     </div>
   );
 }

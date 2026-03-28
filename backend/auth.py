@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sqlite3
+import unicodedata
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -44,7 +45,8 @@ def create_token(user_id: int, email: str) -> str:
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, _jwt_secret(), algorithms=[JWT_ALGO])
+    # Leading/trailing whitespace (e.g. pasted storage) breaks PyJWT verification.
+    return jwt.decode(token.strip(), _jwt_secret(), algorithms=[JWT_ALGO])
 
 
 def init_auth_db():
@@ -81,7 +83,7 @@ def get_user_by_id(user_id: int):
 
 def get_user_by_email(email: str):
     conn = _conn()
-    row = conn.execute("SELECT * FROM users WHERE email = ?", (email.strip().lower(),)).fetchone()
+    row = conn.execute("SELECT * FROM users WHERE email = ?", (normalize_email(email),)).fetchone()
     conn.close()
     return dict(row) if row else None
 
@@ -92,7 +94,7 @@ def create_local_user(email: str, password: str, display_name: str | None):
         conn.execute(
             "INSERT INTO users (email, password_hash, display_name) VALUES (?, ?, ?)",
             (
-                email.strip().lower(),
+                normalize_email(email),
                 generate_password_hash(password, method="pbkdf2:sha256"),
                 display_name or None,
             ),
@@ -143,6 +145,31 @@ def _json_str(value, default=""):
     return str(value)
 
 
+def _password_hash_str(value) -> str | None:
+    """SQLite / Row may surface hashes as str or bytes; werkzeug expects str."""
+    if value is None:
+        return None
+    if isinstance(value, (bytes, bytearray)):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def normalize_email(value) -> str:
+    """Match login / register / forgot-password lookups (strip, lower, remove invisible chars)."""
+    s = _json_str(value, "").strip().lower()
+    for ch in ("\u200b", "\u200c", "\u200d", "\ufeff"):
+        s = s.replace(ch, "")
+    return s
+
+
+def normalize_password_input(value) -> str:
+    """Same rules for register, login, and reset so hashes always match."""
+    p = _json_str(value).strip()
+    if not p:
+        return ""
+    return unicodedata.normalize("NFKC", p)
+
+
 def require_auth(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
@@ -177,8 +204,8 @@ def auth_config():
 @auth_bp.route("/register", methods=["POST"])
 def register():
     body = request.get_json(silent=True) or {}
-    email = _json_str(body.get("email")).strip()
-    password = _json_str(body.get("password"))
+    email = normalize_email(_json_str(body.get("email")))
+    password = normalize_password_input(_json_str(body.get("password")))
     display_name = _json_str(body.get("display_name")).strip() or None
     if not email or not EMAIL_RE.match(email):
         return jsonify({"error": "Valid email is required"}), 400
@@ -188,11 +215,11 @@ def register():
         return jsonify({"error": "An account with this email already exists"}), 409
     try:
         uid = create_local_user(email, password, display_name)
-        token = create_token(uid, email.strip().lower())
+        token = create_token(uid, email)
         return jsonify(
             {
                 "token": token,
-                "user": {"id": uid, "email": email.strip().lower(), "display_name": display_name},
+                "user": {"id": uid, "email": email, "display_name": display_name},
             }
         )
     except sqlite3.IntegrityError:
@@ -216,14 +243,15 @@ def register():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     body = request.get_json(silent=True) or {}
-    email = _json_str(body.get("email")).strip()
-    password = _json_str(body.get("password"))
+    email = normalize_email(_json_str(body.get("email")))
+    password = normalize_password_input(_json_str(body.get("password")))
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
     user = get_user_by_email(email)
-    if not user or not user.get("password_hash"):
+    ph = _password_hash_str(user.get("password_hash") if user else None)
+    if not user or not ph:
         return jsonify({"error": "Invalid email or password"}), 401
-    if not check_password_hash(user["password_hash"], password):
+    if not check_password_hash(ph, password):
         return jsonify({"error": "Invalid email or password"}), 401
     token = create_token(user["id"], user["email"])
     return jsonify(
@@ -242,6 +270,65 @@ def login():
 @require_auth
 def me():
     return jsonify({"user": g.user})
+
+
+@auth_bp.route("/reset-password-simple", methods=["POST"])
+def reset_password_simple():
+    """Demo-only: set a new password from email + new password (no email verification)."""
+    body = request.get_json(silent=True) or {}
+    email = normalize_email(_json_str(body.get("email")))
+    new_password = normalize_password_input(_json_str(body.get("new_password")))
+    # Looser than register: many valid addresses exist; match() was rejecting some real inboxes.
+    if not email or "@" not in email or len(email) < 5:
+        return jsonify({"error": "Valid email is required"}), 400
+    if len(new_password) < 8:
+        return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+    user = get_user_by_email(email)
+    if not user or not user.get("password_hash"):
+        return jsonify(
+            {
+                "updated": False,
+                "message": "No password-based account found for this email. Use Google sign-in, or register first.",
+            }
+        ), 200
+
+    pw_hash = generate_password_hash(new_password, method="pbkdf2:sha256")
+    conn = _conn()
+    try:
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE id = ?",
+            (pw_hash, user["id"]),
+        )
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        current_app.logger.exception("reset_password_simple")
+        return jsonify({"error": "Could not update password", "detail": str(e) if current_app.debug else None}), 500
+    finally:
+        conn.close()
+
+    # Ensure the stored hash verifies (catches rare encoding/storage issues)
+    verify = get_user_by_email(email)
+    vh = _password_hash_str(verify.get("password_hash") if verify else None)
+    if not verify or not vh or not check_password_hash(vh, new_password):
+        current_app.logger.error("reset_password_simple: post-update verify failed for user id=%s", user.get("id"))
+        return jsonify({"error": "Password was not saved correctly. Try again."}), 500
+
+    # Issue a session token immediately so the client does not depend on typing the same password
+    # twice (avoids subtle mismatch from autofill, clipboard, or API base URL differences).
+    token = create_token(user["id"], user["email"])
+    return jsonify(
+        {
+            "updated": True,
+            "message": "Password updated. You can sign in with your new password.",
+            "token": token,
+            "user": {
+                "id": user["id"],
+                "email": user["email"],
+                "display_name": user["display_name"],
+            },
+        }
+    ), 200
 
 
 @auth_bp.route("/google", methods=["GET"])

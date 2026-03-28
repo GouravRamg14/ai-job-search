@@ -105,9 +105,12 @@ export default function Profile() {
             <ul className="mt-6 space-y-3 text-sm text-slate-400">
               <li className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-slate-950/40 px-4 py-3">
                 <span>Password</span>
-                <span className="text-xs text-slate-600" title="Not available in this demo">
-                  Change (demo)
-                </span>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-brand-400 transition hover:text-brand-300"
+                >
+                  Set new password
+                </Link>
               </li>
               <li className="rounded-xl border border-white/[0.06] bg-slate-950/40 px-4 py-3 text-xs leading-relaxed text-slate-500">
                 Sessions use signed tokens. Sign out on shared devices when you&apos;re done.

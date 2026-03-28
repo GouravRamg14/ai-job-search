@@ -10,7 +10,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from auth import login as auth_login_view
 from auth import register as auth_register_view
+from auth import reset_password_simple as auth_reset_simple_view
 from auth import register_auth
+from applications import register_applications
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -19,10 +21,24 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-change-FLASK_SECRE
 CORS(app)  # allows React to call this backend
 
 register_auth(app)
+register_applications(app)
 
 # Short aliases (canonical routes are /api/auth/register and /api/auth/login)
 app.add_url_rule("/api/register", "register_alias", auth_register_view, methods=["POST"])
 app.add_url_rule("/api/login", "login_alias", auth_login_view, methods=["POST"])
+app.add_url_rule(
+    "/api/reset-password-simple",
+    "reset_simple_alias",
+    auth_reset_simple_view,
+    methods=["POST"],
+)
+# Same handler — some clients expect /api/forgot-password for POST body { email, new_password }
+app.add_url_rule(
+    "/api/forgot-password",
+    "forgot_password_simple_alias",
+    auth_reset_simple_view,
+    methods=["POST"],
+)
 
 # Database path: same folder as this script (works on both Windows and macOS/Linux)
 DB_PATH = Path(__file__).resolve().parent / "jobs.db"

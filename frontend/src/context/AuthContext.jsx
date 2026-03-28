@@ -1,19 +1,36 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { API } from '../api';
 
 export const TOKEN_KEY = 'jd_auth_token';
 
 const AuthContext = createContext(null);
 
+function cleanToken(t) {
+  if (t == null) return null;
+  const s = String(t).trim();
+  return s || null;
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(() => cleanToken(localStorage.getItem(TOKEN_KEY)));
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(Boolean(localStorage.getItem(TOKEN_KEY)));
+  const [loading, setLoading] = useState(Boolean(cleanToken(localStorage.getItem(TOKEN_KEY))));
+  /** After login/register/OAuth, ignore one spurious 401 from /me (race or whitespace token issues). */
+  const freshCredentialsSessionRef = useRef(false);
 
   const persistToken = useCallback((t) => {
-    if (t) {
-      localStorage.setItem(TOKEN_KEY, t);
-      setToken(t);
+    const c = cleanToken(t);
+    if (c) {
+      localStorage.setItem(TOKEN_KEY, c);
+      setToken(c);
     } else {
       localStorage.removeItem(TOKEN_KEY);
       setToken(null);
@@ -29,17 +46,27 @@ export function AuthProvider({ children }) {
     }
     let cancelled = false;
     setLoading(true);
+    const authHeader = `Bearer ${token}`;
     fetch(`${API}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: authHeader },
     })
       .then(async (res) => {
         if (res.status === 401) {
-          if (!cancelled) persistToken(null);
+          if (!cancelled) {
+            if (freshCredentialsSessionRef.current) {
+              freshCredentialsSessionRef.current = false;
+              return;
+            }
+            persistToken(null);
+          }
           return;
         }
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled && data?.user) setUser(data.user);
+        if (!cancelled && data?.user) {
+          freshCredentialsSessionRef.current = false;
+          setUser(data.user);
+        }
       })
       .catch(() => {
         // Network error: keep token; user may still be set from login/register.
@@ -54,14 +81,20 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(
     async (email, password) => {
+      const emailNorm = email.trim().toLowerCase();
+      const pwd =
+        typeof password === 'string' ? password.trim() : String(password ?? '');
       const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: emailNorm, password: pwd }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      persistToken(data.token);
+      const t = cleanToken(data.token);
+      if (!t) throw new Error('Login did not return a token');
+      freshCredentialsSessionRef.current = true;
+      persistToken(t);
       setUser(data.user);
       return data.user;
     },
@@ -77,7 +110,10 @@ export function AuthProvider({ children }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Registration failed');
-      persistToken(data.token);
+      const t = cleanToken(data.token);
+      if (!t) throw new Error('Registration did not return a token');
+      freshCredentialsSessionRef.current = true;
+      persistToken(t);
       setUser(data.user);
       return data.user;
     },
@@ -88,9 +124,18 @@ export function AuthProvider({ children }) {
     persistToken(null);
   }, [persistToken]);
 
+  /** Second arg optional: set user immediately (OAuth passes token only; /me fills user). */
   const setTokenFromOAuth = useCallback(
-    (t) => {
-      persistToken(t);
+    (t, userFromServer) => {
+      if (!t) {
+        persistToken(null);
+        return;
+      }
+      const c = cleanToken(t);
+      if (!c) return;
+      freshCredentialsSessionRef.current = true;
+      persistToken(c);
+      if (userFromServer) setUser(userFromServer);
     },
     [persistToken],
   );

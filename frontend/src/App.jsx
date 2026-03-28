@@ -4,12 +4,15 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import JobDetail from './pages/JobDetail';
 import Shortlist from './pages/Shortlist';
+import AppliedJobs from './pages/AppliedJobs';
 import CompanyJobs from './pages/CompanyJobs';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 import Profile from './pages/Profile';
+import ForgotPassword from './pages/ForgotPassword';
 import ConfirmModal from './components/ui/ConfirmModal';
+import RequireAuth from './components/auth/RequireAuth';
 
 function userInitials(user) {
   if (user.display_name) {
@@ -26,7 +29,7 @@ function HeaderNav() {
   const location = useLocation();
   const [signOutOpen, setSignOutOpen] = useState(false);
 
-  const authShell = ['/login', '/register', '/auth/callback'].includes(location.pathname);
+  const authShell = ['/login', '/register', '/auth/callback', '/forgot-password'].includes(location.pathname);
 
   if (authShell) {
     return (
@@ -89,6 +92,17 @@ function HeaderNav() {
               }
             >
               Shortlist
+            </NavLink>
+            <NavLink
+              to="/applications"
+              className={({ isActive }) =>
+                [
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive ? 'bg-brand-500 text-white shadow-sm' : 'text-slate-400 hover:text-white',
+                ].join(' ')
+              }
+            >
+              Applications
             </NavLink>
           </nav>
 
@@ -164,7 +178,7 @@ function HeaderNav() {
       <ConfirmModal
         open={signOutOpen}
         title="Sign out?"
-        description="You’ll need to sign in again to access your shortlist and profile on this device."
+        description="You’ll need to sign in again to access your shortlist, applications, and profile on this device."
         confirmLabel="Sign out"
         cancelLabel="Cancel"
         danger
@@ -194,17 +208,33 @@ function AppRoutes() {
             <Route path="/" element={<Home />} />
             <Route path="/job/:id" element={<JobDetail />} />
             <Route path="/company/:companyName" element={<CompanyJobs />} />
-            <Route path="/shortlist" element={<Shortlist />} />
+            <Route
+              path="/shortlist"
+              element={
+                <RequireAuth>
+                  <Shortlist />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/applications"
+              element={
+                <RequireAuth>
+                  <AppliedJobs />
+                </RequireAuth>
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
 
         <footer className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.06] pt-8 text-xs text-slate-600">
           <span>Job Discovery Studio · Demo</span>
-          <span className="hidden sm:inline">AI search · Shortlist · Account</span>
+          <span className="hidden sm:inline">AI search · Shortlist · Applications · Account</span>
         </footer>
       </div>
     </div>

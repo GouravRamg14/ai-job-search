@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { getJobImageUrl } from '../utils/jobImage';
 import { relativeTime } from '../utils/relativeTime';
 
 export default function Shortlist() {
+  const { user } = useAuth();
   const [list, setList] = useState([]);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function Shortlist() {
             Shortlisted roles
           </h1>
           <p className="text-xs text-slate-400 md:text-sm">
-            Save roles during a live search, then come back here to compare.
+            Signed in as <span className="text-slate-300">{user?.email}</span>. Saved roles stay in this browser.
           </p>
         </div>
         <Link

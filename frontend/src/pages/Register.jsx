@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/auth/AuthLayout';
+import { getSafeNextPath } from '../utils/authRedirect';
 
 function FieldIcon({ children }) {
   return (
@@ -24,6 +25,7 @@ function passwordStrengthScore(pw) {
 export default function Register() {
   const { register, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +38,8 @@ export default function Register() {
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength] || '';
 
   useEffect(() => {
-    if (!authLoading && user) navigate('/', { replace: true });
-  }, [user, authLoading, navigate]);
+    if (!authLoading && user) navigate(getSafeNextPath(params), { replace: true });
+  }, [user, authLoading, navigate, params]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -49,7 +51,7 @@ export default function Register() {
     setBusy(true);
     try {
       await register({ email, password, display_name: displayName || undefined });
-      navigate('/', { replace: true });
+      navigate(getSafeNextPath(params), { replace: true });
     } catch (e2) {
       setErr(e2.message || 'Could not register');
     } finally {
@@ -75,7 +77,12 @@ export default function Register() {
         <h2 className="text-xl font-semibold tracking-tight text-white">Register</h2>
         <p className="mt-1 text-sm text-slate-400">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-brand-400 hover:text-brand-300">
+          <Link
+            to={
+              params.get('next') ? `/login?next=${encodeURIComponent(params.get('next'))}` : '/login'
+            }
+            className="font-medium text-brand-400 hover:text-brand-300"
+          >
             Sign in
           </Link>
         </p>

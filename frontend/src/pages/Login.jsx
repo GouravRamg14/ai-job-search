@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { API } from '../api';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/auth/AuthLayout';
+import { getSafeNextPath } from '../utils/authRedirect';
 
 function FieldIcon({ children }) {
   return (
@@ -36,9 +37,11 @@ export default function Login() {
     if (oauthErr === 'oauth_incomplete') setErr('Google did not return email. Check your Google account.');
   }, [params]);
 
+  const resetSuccess = params.get('reset') === 'success';
+
   useEffect(() => {
-    if (!authLoading && user) navigate('/', { replace: true });
-  }, [user, authLoading, navigate]);
+    if (!authLoading && user) navigate(getSafeNextPath(params), { replace: true });
+  }, [user, authLoading, navigate, params]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -46,7 +49,7 @@ export default function Login() {
     setBusy(true);
     try {
       await login(email, password);
-      navigate('/', { replace: true });
+      navigate(getSafeNextPath(params), { replace: true });
     } catch (e2) {
       setErr(e2.message || 'Login failed');
     } finally {
@@ -73,7 +76,14 @@ export default function Login() {
           <h2 className="text-xl font-semibold tracking-tight text-white">Sign in</h2>
           <p className="mt-1 text-sm text-slate-400">
             New to Job Discovery?{' '}
-            <Link to="/register" className="font-medium text-brand-400 hover:text-brand-300">
+            <Link
+              to={
+                params.get('next')
+                  ? `/register?next=${encodeURIComponent(params.get('next'))}`
+                  : '/register'
+              }
+              className="font-medium text-brand-400 hover:text-brand-300"
+            >
               Create an account
             </Link>
           </p>
@@ -81,6 +91,14 @@ export default function Login() {
       </div>
 
       <form onSubmit={submit} className="space-y-5">
+        {resetSuccess ? (
+          <div
+            role="status"
+            className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-100"
+          >
+            Password updated successfully. Sign in with your new password.
+          </div>
+        ) : null}
         {err ? (
           <div
             role="alert"
@@ -122,12 +140,12 @@ export default function Login() {
             <label htmlFor="login-password" className="text-sm font-medium text-slate-300">
               Password
             </label>
-            <span
-              className="cursor-not-allowed text-xs text-slate-500"
-              title="Password reset is not enabled in this demo"
+            <Link
+              to="/forgot-password"
+              className="text-xs font-medium text-brand-400 transition hover:text-brand-300"
             >
               Forgot password?
-            </span>
+            </Link>
           </div>
           <div className="relative">
             <FieldIcon>
