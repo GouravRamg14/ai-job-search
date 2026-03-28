@@ -1,3 +1,31 @@
-backend/.env
+# Secrets
 .env
+backend/.env
 *.db-journal
+
+# Local SQLite (dev data / users / applications — not for version control)
+backend/jobs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
+# Node (if tooling runs at repo root)
+node_modules/
+
+# Frontend build output (also listed in frontend/.gitignore)
+frontend/dist/
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
+*.swo
