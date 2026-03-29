@@ -1,4 +1,4 @@
-"""Per-user job applications stored in SQLite (demo pipeline)."""
+"""Per-user job applications stored in SQLite."""
 import random
 import sqlite3
 import string

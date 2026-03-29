@@ -233,7 +233,7 @@ function AppRoutes() {
         </main>
 
         <footer className="mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-white/[0.06] pt-8 text-xs text-slate-600">
-          <span>Job Discovery Studio · Demo</span>
+          <span>Job Discovery Studio</span>
           <span className="hidden sm:inline">AI search · Shortlist · Applications · Account</span>
         </footer>
       </div>

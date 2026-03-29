@@ -43,7 +43,7 @@ SALARY_OPTIONS = [
 EXPERIENCE_OPTIONS = ["Entry level", "0–2 years", "1–3 years", "Mid-level", "2–5 years", "Senior", "0–1 years"]
 
 def apply_url_for_company(company):
-    """Placeholder apply URL per company (demo)."""
+    """Placeholder apply URL per company for seeded listings."""
     slug = (company or "company").replace(" ", "").lower()
     return f"https://{slug}.careers.example.com/apply"
 

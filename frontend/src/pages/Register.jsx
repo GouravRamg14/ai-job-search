@@ -65,7 +65,7 @@ export default function Register() {
       subtitle="Join Job Discovery to search smarter, shortlist roles, and manage your profile in one place."
       footer={
         <>
-          By registering you agree to our demo terms. For questions, return to{' '}
+          By registering you agree to our terms of use. Questions? Return to{' '}
           <Link to="/" className="text-slate-400 underline underline-offset-2 hover:text-slate-300">
             home
           </Link>
@@ -217,7 +217,7 @@ export default function Register() {
           <span className="text-sm leading-snug text-slate-400">
             I agree to the{' '}
             <span className="text-slate-300">Terms of Service</span> and{' '}
-            <span className="text-slate-300">Privacy Policy</span> for this demo application.
+            <span className="text-slate-300">Privacy Policy</span>.
           </span>
         </label>
 

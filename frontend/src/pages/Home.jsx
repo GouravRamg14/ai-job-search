@@ -63,7 +63,7 @@ export default function Home() {
       <section className="grid gap-6 md:grid-cols-[2fr,1.4fr]">
         <div className="space-y-4">
           <h1 className="bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-3xl font-semibold tracking-tight text-transparent md:text-4xl">
-            Discover beginner‑friendly tech roles, fast.
+            Discover tech roles that fit you, fast.
           </h1>
           <p className="max-w-xl text-sm text-slate-300 md:text-base">
             Type how you would talk:{" "}
@@ -178,7 +178,7 @@ export default function Home() {
                 {loading ? 'Scanning roles…' : `${jobs.length} matches loaded`}
               </p>
               <p className="text-xs text-slate-400">
-                Your query is ranked against a curated set of beginner‑friendly roles.
+                Your query is ranked against a curated set of roles.
               </p>
             </div>
             <div className="mt-6 space-y-2 text-xs text-slate-300">
@@ -189,7 +189,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[0.7rem] text-slate-400">
-                Use the shortlist tab to save interesting roles during your live demo.
+                Use the shortlist tab to save roles you want to revisit.
               </p>
             </div>
           </div>

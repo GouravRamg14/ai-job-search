@@ -173,7 +173,7 @@ export default function ApplyJobModal({ job, open, onClose }) {
                 </button>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Demo application—details are not sent to an employer. Submit to receive a reference ID only.
+                Submit to save your application in Job Discovery and receive a reference ID for your records.
               </p>
             </div>
             <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
@@ -421,8 +421,7 @@ export default function ApplyJobModal({ job, open, onClose }) {
               <p className="text-[0.65rem] font-medium uppercase tracking-wider text-slate-500">Reference</p>
               <p className="mt-1 font-mono text-lg font-semibold tracking-tight text-brand-300">{refId}</p>
               <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                Save this reference for your records. In a real system, the employer would receive your application and
-                may follow up by email.
+                Save this reference for your records. Track status anytime under Applications.
               </p>
             </div>
             <Link

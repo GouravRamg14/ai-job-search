@@ -69,7 +69,7 @@ export default function ForgotPassword() {
   return (
     <AuthLayout
       title="Set a new password"
-      subtitle="Enter the email on your account and choose a new password. No email is sent—this flow is for demos only and is not secure for production."
+      subtitle="Enter the email associated with your account and choose a new password."
       footer={
         <>
           Remember your password?{' '}

@@ -60,8 +60,8 @@ export default function AppliedJobs() {
         <div>
           <h1 className="text-xl font-semibold text-slate-50 md:text-2xl">Applications</h1>
           <p className="text-xs text-slate-400 md:text-sm">
-            Signed in as <span className="text-slate-300">{user?.email}</span>. Stored on the server; progress is{' '}
-            <span className="text-slate-300">demo data</span> only.
+            Signed in as <span className="text-slate-300">{user?.email}</span>. Applications are stored on the server;
+            status is an illustrative pipeline for your reference.
           </p>
         </div>
         <Link
@@ -87,7 +87,7 @@ export default function AppliedJobs() {
         <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/70 px-5 py-6 text-sm text-slate-300">
           <p className="font-medium text-slate-100">No applications yet.</p>
           <p className="mt-1 text-xs text-slate-400">
-            When you submit the apply form on a role, it will appear here with a dummy hiring pipeline.
+            When you apply to a role, it will appear here with a simple hiring pipeline view.
           </p>
           <p className="mt-3 text-xs">
             <Link to="/" className="font-medium text-brand-200 underline-offset-2 hover:underline">
@@ -162,7 +162,7 @@ export default function AppliedJobs() {
                 <div className="border-t border-white/[0.06] bg-slate-900/50 px-4 py-4 sm:px-5">
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Status (demo)
+                      Status
                     </span>
                     <span className="text-xs font-medium text-brand-300">{pct}%</span>
                   </div>
@@ -194,11 +194,11 @@ export default function AppliedJobs() {
                     <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{stage.detail}</p>
                     {next ? (
                       <p className="mt-2 border-t border-white/[0.06] pt-2 text-[0.7rem] text-slate-600">
-                        Next (dummy): <span className="text-slate-500">{next.label}</span>
+                        Next stage: <span className="text-slate-500">{next.label}</span>
                       </p>
                     ) : (
                       <p className="mt-2 border-t border-white/[0.06] pt-2 text-[0.7rem] text-slate-600">
-                        Pipeline end (demo — not a real outcome).
+                        Final stage in this view.
                       </p>
                     )}
                   </div>

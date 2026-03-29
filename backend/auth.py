@@ -274,7 +274,7 @@ def me():
 
 @auth_bp.route("/reset-password-simple", methods=["POST"])
 def reset_password_simple():
-    """Demo-only: set a new password from email + new password (no email verification)."""
+    """Set a new password from email + new password (no email verification; use when mail is not configured)."""
     body = request.get_json(silent=True) or {}
     email = normalize_email(_json_str(body.get("email")))
     new_password = normalize_password_input(_json_str(body.get("new_password")))
