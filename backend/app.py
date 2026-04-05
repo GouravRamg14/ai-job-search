@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from db_init import ensure_jobs_schema
-from db_path import DB_PATH
+from db_path import get_db_path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -69,7 +69,7 @@ app.add_url_rule(
 
 # Load all jobs from SQLite into a list (we'll use this for AI)
 def get_all_jobs():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     conn.row_factory = sqlite3.Row  # so we get dict-like rows
     c = conn.cursor()
     c.execute("SELECT * FROM jobs")

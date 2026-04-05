@@ -13,7 +13,7 @@ from authlib.integrations.flask_client import OAuth
 from flask import Blueprint, current_app, g, jsonify, redirect, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from db_path import DB_PATH
+from db_path import get_db_path
 
 JWT_ALGO = "HS256"
 JWT_EXPIRE_DAYS = 7
@@ -48,7 +48,7 @@ def decode_token(token: str) -> dict:
 
 
 def init_auth_db():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     c = conn.cursor()
     c.execute(
         """
@@ -67,7 +67,7 @@ def init_auth_db():
 
 
 def _conn():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     conn.row_factory = sqlite3.Row
     return conn
 

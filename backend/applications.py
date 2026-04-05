@@ -6,7 +6,8 @@ import time
 
 from flask import Blueprint, g, jsonify, request
 
-from auth import DB_PATH, require_auth
+from auth import require_auth
+from db_path import get_db_path
 
 applications_bp = Blueprint("applications", __name__, url_prefix="/api/applications")
 
@@ -14,13 +15,13 @@ NUM_STAGES = 5
 
 
 def _conn():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_job_applications_table():
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     c = conn.cursor()
     c.execute(
         """

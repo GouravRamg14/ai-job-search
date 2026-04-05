@@ -1,15 +1,17 @@
 """
 Single source of truth for the SQLite file path (jobs, users, applications).
 
-Local default: backend/jobs.db
-
-Production (Render): set SQLITE_PATH to a persistent path, e.g. /var/data/jobs.db
-when you attach a Render Disk to the web service.
+Load .env before reading SQLITE_PATH so imports work even when auth loads
+before app.load_dotenv() (e.g. Gunicorn workers).
 """
 from __future__ import annotations
 
 import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
 
 
 def get_db_path() -> Path:
@@ -26,4 +28,5 @@ def get_db_path() -> Path:
     return Path(__file__).resolve().parent / "jobs.db"
 
 
+# Resolved at import time (after load_dotenv above). Use get_db_path() when you need a fresh path.
 DB_PATH = get_db_path()

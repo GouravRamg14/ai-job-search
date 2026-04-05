@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from db_path import DB_PATH
+from db_path import get_db_path
 
 JOBS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS jobs (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 
 def ensure_jobs_schema() -> None:
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(get_db_path()))
     try:
         conn.execute(JOBS_TABLE_SQL)
         conn.commit()

@@ -3,10 +3,10 @@ import random
 from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
-from db_path import DB_PATH
+from db_path import get_db_path
 
 # Creates / updates jobs.db and jobs table
-conn = sqlite3.connect(str(DB_PATH))
+conn = sqlite3.connect(str(get_db_path()))
 c = conn.cursor()
 
 # Recreate table with posted_at, salary, experience_level, apply_url
