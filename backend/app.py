@@ -4,6 +4,7 @@ import sqlite3
 from dotenv import load_dotenv
 from pathlib import Path
 
+from db_init import ensure_jobs_schema
 from db_path import DB_PATH
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -36,6 +37,9 @@ if _cors_origins:
     )
 else:
     CORS(app)  # dev: allow all
+
+# Avoid 500 when jobs table is missing (e.g. seed step skipped). Empty table until seed runs.
+ensure_jobs_schema()
 
 register_auth(app)
 register_applications(app)
