@@ -18,10 +18,31 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-only-change-FLASK_SECRET_KEY")
-CORS(app)  # allows React to call this backend
+
+# Production: set ALLOWED_ORIGINS=https://your-app.vercel.app,http://localhost:5173
+_cors_origins = [
+    o.strip()
+    for o in (os.environ.get("ALLOWED_ORIGINS") or "").split(",")
+    if o.strip()
+]
+if _cors_origins:
+    CORS(
+        app,
+        origins=_cors_origins,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    )
+else:
+    CORS(app)  # dev: allow all
 
 register_auth(app)
 register_applications(app)
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Load balancer / platform health (Render, etc.)."""
+    return jsonify({"status": "ok"}), 200
 
 # Short aliases (canonical routes are /api/auth/register and /api/auth/login)
 app.add_url_rule("/api/register", "register_alias", auth_register_view, methods=["POST"])

@@ -1,0 +1,17 @@
+# Render.com Blueprint — Flask API for Job Discovery Studio.
+# After deploy, set FRONTEND_URL, BACKEND_URL, ALLOWED_ORIGINS in the Render dashboard.
+services:
+  - type: web
+    name: ai-job-search-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python seed_db.py
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true

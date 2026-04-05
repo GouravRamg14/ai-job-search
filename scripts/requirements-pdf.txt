@@ -1,0 +1,4 @@
+# Optional: PDF doc generation (scripts/generate_project_pdf.py)
+playwright>=1.40
+reportlab>=4.0
+pillow>=10.0
