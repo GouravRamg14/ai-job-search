@@ -8,14 +8,12 @@ import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from pathlib import Path
-
 import jwt
 from authlib.integrations.flask_client import OAuth
 from flask import Blueprint, current_app, g, jsonify, redirect, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
-DB_PATH = Path(__file__).resolve().parent / "jobs.db"
+from db_path import DB_PATH
 
 JWT_ALGO = "HS256"
 JWT_EXPIRE_DAYS = 7

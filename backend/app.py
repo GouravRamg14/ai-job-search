@@ -1,8 +1,10 @@
 import os
 import sqlite3
-from pathlib import Path
 
 from dotenv import load_dotenv
+from pathlib import Path
+
+from db_path import DB_PATH
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -60,9 +62,6 @@ app.add_url_rule(
     auth_reset_simple_view,
     methods=["POST"],
 )
-
-# Database path: same folder as this script (works on both Windows and macOS/Linux)
-DB_PATH = Path(__file__).resolve().parent / "jobs.db"
 
 # Load all jobs from SQLite into a list (we'll use this for AI)
 def get_all_jobs():
