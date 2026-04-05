@@ -69,6 +69,8 @@ app.add_url_rule(
 
 # Load all jobs from SQLite into a list (we'll use this for AI)
 def get_all_jobs():
+    # Ensure schema on the same file we query (handles worker/cwd/path edge cases on Render).
+    ensure_jobs_schema()
     conn = sqlite3.connect(str(get_db_path()))
     conn.row_factory = sqlite3.Row  # so we get dict-like rows
     c = conn.cursor()
