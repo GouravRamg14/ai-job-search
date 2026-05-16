@@ -16,6 +16,7 @@ from auth import register as auth_register_view
 from auth import reset_password_simple as auth_reset_simple_view
 from auth import register_auth
 from applications import register_applications
+from admin import register_admin
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -43,6 +44,7 @@ ensure_jobs_schema()
 
 register_auth(app)
 register_applications(app)
+register_admin(app)
 
 
 @app.route("/health", methods=["GET"])
